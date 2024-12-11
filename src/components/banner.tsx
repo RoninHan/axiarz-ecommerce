@@ -24,7 +24,7 @@ export default function Banner(props: BannerProps) {
     const bannerItems = useMemo(() => {
         return data.map((item) => (
             <SwiperSlide key={item.id}>
-                <img src={item.image} alt={item.title} />
+                <img src={item.image} className='w-[1200px] h-[450px]' alt={item.title} />
             </SwiperSlide>
         ))
     }, [data]);
