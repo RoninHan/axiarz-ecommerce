@@ -7,30 +7,26 @@ import Banner from '@/components/banner';
 import Header from '@/components/header';
 import TabsProductList from '@/components/tabsProductList';
 import TabsProductListMin from '@/components/tabsProductListMin';
+import { get } from '@/utils/request';
 
 
 export default function Home() {
 
-  const bannerData = [
-    {
-      id: '1',
-      image: 'https://www.waveshare.net/images/i8/6cc315baedc14930967ce6eebda7df7f.jpg',
-      title: '1.3寸树莓派LCD游戏机',
-      description: '240×240，65K彩色，带喇叭'
-    },
-    {
-      id: '2',
-      image: 'https://www.waveshare.net/images/i8/6cc315baedc14930967ce6eebda7df7f.jpg',
-      title: '1.3寸树莓派LCD游戏机',
-      description: '240×240，65K彩色，带喇叭'
-    },
-    {
-      id: '3',
-      image: 'https://www.waveshare.net/images/i8/6cc315baedc14930967ce6eebda7df7f.jpg',
-      title: '1.3寸树莓派LCD游戏机',
-      description: '240×240，65K彩色，带喇叭'
+
+  const [bannerData, setBannerData] = React.useState<any[]>([]);
+  const getBannerData = async () => {
+    try {
+      const res = await get("/api/banner/all");
+      setBannerData(res as any[]);
+    } catch (e) {
+      console.log(e);
     }
-  ]
+  }
+
+  React.useEffect(() => {
+    getBannerData();
+  }, []);
+
 
   const productsData = [
     {

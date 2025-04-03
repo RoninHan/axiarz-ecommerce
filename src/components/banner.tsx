@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 
 interface BannerItem {
     id: string;
-    image: string;
+    image_url: string;
     title?: string;
     description?: string;
 }
@@ -22,11 +22,14 @@ export default function Banner(props: BannerProps) {
     const { data } = props;
 
     const bannerItems = useMemo(() => {
-        return data.map((item) => (
+        return data.map((item) => {
+            const image = process.env.NEXT_PUBLIC_API_BASE_URL + item.image_url
+            return (
             <SwiperSlide key={item.id}>
-                <img src={item.image} className='w-[1200px] h-[450px]' alt={item.title} />
-            </SwiperSlide>
-        ))
+                <img src={image} className='w-[1200px] h-[450px]' alt={item.title} />
+                </SwiperSlide>
+            )
+        })
     }, [data]);
 
     return (
