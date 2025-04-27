@@ -17,6 +17,7 @@ import React from "react";
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
+import { get } from "@/utils/request";
 
 
 interface TabPanelProps {
@@ -54,6 +55,7 @@ export default function ShopItem() {
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
 
+    const [data, setData] = React.useState<any>({});
     const [age, setAge] = React.useState('');
 
     const handleChange = (event: SelectChangeEvent) => {
@@ -65,9 +67,17 @@ export default function ShopItem() {
         setValue(newValue);
     };
 
+    const getItem = async () => {
+        let res: any = await get(`/api/product/get/${id}`);
+        console.log(res)
+        res.image_url = process.env.NEXT_PUBLIC_API_BASE_URL + res.image_url
+        setData(res)
+    }
+
 
     useEffect(() => {
         console.log('id: ' + id)
+        getItem()
     }, [])
 
     return (
@@ -78,29 +88,29 @@ export default function ShopItem() {
                 <div className="flex gap-[20px]">
                     <div>
                         <a href="">
-                            <ImageZoom img={"https://www.waveshare.net/thumb/middle/photo/accBoard/GamePi13/GamePi13-1.jpg"} bigImg={"https://www.waveshare.net/thumb/middle/photo/accBoard/GamePi13/GamePi13-1.jpg"} />
+                            <ImageZoom img={data.image_url} bigImg={data.image_url} />
                         </a>
                     </div>
                     <div className="w-[716px]">
 
-                        <div className="title text-[24px] text-[#666]">7寸IPS电容触控屏1024×600像素 DSI通信</div>
-                        <div className="sub-title text-[#ff0036] py-[10px] font-[14px]">5点触控，I2C触摸接口，钢化玻璃面板</div>
+                        <div className="title text-[24px] text-[#666]">{data.name}</div>
+                        <div className="sub-title text-[#ff0036] py-[10px] font-[14px]">{data.subtitle}</div>
                         <div className="price h-[60px] bg-[#f0f0f0] px-[10px] flex items-center rounded-sm">
                             <div className="line-left    text-[#666] w-[121px]">价格</div>
-                            <div className="line-right text-[36px] text-[#ff0036] flex-1">¥307.04</div>
+                            <div className="line-right text-[36px] text-[#ff0036] flex-1">¥{data.price}</div>
                         </div>
                         <div className="py-[20px] text-[#666] border-b-[1px] border-solid border-gray-300">
                             <div className="model flex items-center px-[10px] mt-[15px]">
                                 <div className="line-left w-[121px]">型号</div>
-                                <div className="line-right flex-1 ">7inch DSI LCD (C)</div>
+                                <div className="line-right flex-1 ">{data.xh}</div>
                             </div>
                             <div className="sku flex items-center px-[10px] mt-[15px]">
                                 <div className="line-left w-[121px]">SKU</div>
-                                <div className="line-right flex-1 ">20429</div>
+                                <div className="line-right flex-1 ">{data.sku}</div>
                             </div>
                             <div className="brand flex items-center px-[10px] mt-[15px]">
                                 <div className="line-left w-[121px]">品牌</div>
-                                <div className="line-right flex-1 ">Waveshare</div>
+                                <div className="line-right flex-1 ">{data.pp}</div>
                             </div>
                         </div>
 
@@ -169,7 +179,7 @@ export default function ShopItem() {
                             </Tabs>
                         </Box>
                         <CustomTabPanel value={value} index={0}>
-                            Item One
+                            {data.description}
                         </CustomTabPanel>
                         <CustomTabPanel value={value} index={1}>
                             Item Two

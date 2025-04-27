@@ -18,7 +18,7 @@ export default function Product(props: ProductProps) {
     const router = useRouter();
 
     const handleGoDetails = () => {
-        router.push(`/shopItem/${props.id}`);
+        router.push(`/shopItem?id=` + props.id);
     }
     return (
         <Card sx={{ maxWidth: 365 }} className='w-[232px]' onClick={() => handleGoDetails()} >
@@ -26,19 +26,19 @@ export default function Product(props: ProductProps) {
                 <CardMedia
                     component="img"
                     height="150"
-                    image="https://www.waveshare.net/thumb/middle/photo/accBoard/GamePi13/GamePi13-1.jpg"
+                    image={props.image}
                     alt="green iguana"
                     className='w-[200px] h-[150px]'
                 />
                 <CardContent className='p-0'>
                     <Typography gutterBottom className='text-[14px] font-bold h-[24px] mb-[3px]' align='center' component="div">
-                        1.3寸树莓派LCD游戏机
+                        {props.name}
                     </Typography>
                     <Typography variant="body2" className='text-[12px] mb-[8px] h-[24px]' align='center' sx={{ color: 'text.secondary' }}>
-                        240×240，65K彩色，带喇叭
+                        {props.context}
                     </Typography>
                     <Typography align='center' className='text-[14px] h-[24px]' sx={{ color: 'red' }}>
-                        ￥ 99.00
+                        ￥ {props.price}
                     </Typography>
                 </CardContent>
             </CardActionArea>
