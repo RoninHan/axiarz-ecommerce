@@ -1,4 +1,3 @@
-
 import { styled, alpha } from '@mui/material/styles';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -15,18 +14,28 @@ import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 import SearchIcon from '@mui/icons-material/Search';
 import InputBase from '@mui/material/InputBase';
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-const pages = ['Products', 'Pricing', 'Blog'];
-const settings = ['Profile', 'Account', 'Dashboard', 'Logout'];
+interface NavItem {
+  label: string;
+  path: string;
+}
 
+const navItems: NavItem[] = [
+  { label: 'Products', path: '/products' },
+  { label: 'Pricing', path: '/pricing' },
+  { label: 'Blog', path: '/blog' },
+];
+
+const settings = ['Account', 'Logout'];
 
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
     borderRadius: theme.shape.borderRadius,
-    backgroundColor: alpha('#fa9619', 0.15),
+    backgroundColor: alpha('#fff', 0.15),
     '&:hover': {
-        backgroundColor: alpha('#fa9619', 0.25),
+        backgroundColor: alpha('#fff', 0.25),
     },
     marginRight: theme.spacing(2),
     marginLeft: 0,
@@ -35,7 +44,7 @@ const Search = styled('div')(({ theme }) => ({
         marginLeft: theme.spacing(3),
         width: 'auto',
     },
-    color: alpha('#fa9619', 0.75)
+    color: alpha('#fff', 0.75)
 }));
 
 const SearchIconWrapper = styled('div')(({ theme }) => ({
@@ -52,7 +61,6 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     color: 'inherit',
     '& .MuiInputBase-input': {
         padding: theme.spacing(1, 1, 1, 0),
-        // vertical padding + font size from searchIcon
         paddingLeft: `calc(1em + ${theme.spacing(4)})`,
         transition: theme.transitions.create('width'),
         width: '100%',
@@ -65,10 +73,13 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 export default function Header() {
     const [anchorElNav, setAnchorElNav] = React.useState<null | HTMLElement>(null);
     const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const router = useRouter();
 
     const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorElNav(event.currentTarget);
     };
+
     const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorElUser(event.currentTarget);
     };
@@ -80,16 +91,45 @@ export default function Header() {
     const handleCloseUserMenu = () => {
         setAnchorElUser(null);
     };
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        router.push('/login');
+        handleCloseUserMenu();
+    };
+
+    const handleMenuItemClick = (setting: string) => {
+        handleCloseUserMenu();
+        switch (setting) {
+            case 'Account':
+                router.push('/account');
+                break;
+            case 'Logout':
+                handleLogout();
+                break;
+        }
+    };
+
+    const handleNavItemClick = (path: string) => {
+        router.push(path);
+        handleCloseNavMenu();
+    };
+
+    const handleSearch = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter' && searchQuery.trim()) {
+            router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        }
+    };
+
     return (
-        <AppBar position="static" sx={{ backgroundColor: '#fff' }}>
+        <AppBar position="static" sx={{ backgroundColor: '#373737' }}>
             <Container maxWidth="xl">
                 <Toolbar disableGutters>
-                    <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
                     <Typography
                         variant="h6"
                         noWrap
                         component="a"
-                        href="#app-bar-with-responsive-menu"
+                        href="/"
                         sx={{
                             mr: 2,
                             display: { xs: 'none', md: 'flex' },
@@ -100,7 +140,7 @@ export default function Header() {
                             textDecoration: 'none',
                         }}
                     >
-                        LOGO
+                        <img src="/axiarz-logo.png" alt="logo" className='w-[100px]' />
                     </Typography>
 
                     <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
@@ -128,11 +168,11 @@ export default function Header() {
                             }}
                             open={Boolean(anchorElNav)}
                             onClose={handleCloseNavMenu}
-                            sx={{ display: { xs: 'block', md: 'none' }, color: '#333' }}
+                            sx={{ display: { xs: 'block', md: 'none' }, color: '#fff' }}
                         >
-                            {pages.map((page) => (
-                                <MenuItem key={page} onClick={handleCloseNavMenu}>
-                                    <Typography sx={{ textAlign: 'center', color: '#333' }}>{page}</Typography>
+                            {navItems.map((item) => (
+                                <MenuItem key={item.path} onClick={() => handleNavItemClick(item.path)}>
+                                    <Typography sx={{ textAlign: 'center', color: '#fff' }}>{item.label}</Typography>
                                 </MenuItem>
                             ))}
                         </Menu>
@@ -142,7 +182,7 @@ export default function Header() {
                         variant="h5"
                         noWrap
                         component="a"
-                        href="#app-bar-with-responsive-menu"
+                        href="/"
                         sx={{
                             mr: 2,
                             display: { xs: 'flex', md: 'none' },
@@ -150,21 +190,21 @@ export default function Header() {
                             fontFamily: 'monospace',
                             fontWeight: 700,
                             letterSpacing: '.3rem',
-                            color: '#333',
+                            color: '#fff',
                             textDecoration: 'none',
                         }}
                     >
-                        LOGO
+                        <img src="/axiarz-logo.png" alt="logo" className='w-[100px]' />
                     </Typography>
                     <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-                        {pages.map((page) => (
+                        {navItems.map((item) => (
                             <Button
-                                key={page}
-                                onClick={handleCloseNavMenu}
-                                sx={{ my: 2, color: '#333', display: 'block' }}
+                                key={item.path}
+                                onClick={() => handleNavItemClick(item.path)}
+                                sx={{ my: 2, color: '#fff', display: 'block' }}
                                 className='hover:text-[#fa9619]'
                             >
-                                {page}
+                                {item.label}
                             </Button>
                         ))}
                     </Box>
@@ -173,8 +213,11 @@ export default function Header() {
                             <SearchIcon />
                         </SearchIconWrapper>
                         <StyledInputBase
-                            placeholder="Search…"
+                            placeholder="搜索产品..."
                             inputProps={{ 'aria-label': 'search' }}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={handleSearch}
                         />
                     </Search>
                     <Box sx={{ flexGrow: 0 }}>
@@ -200,7 +243,7 @@ export default function Header() {
                             onClose={handleCloseUserMenu}
                         >
                             {settings.map((setting) => (
-                                <MenuItem key={setting} onClick={handleCloseUserMenu}>
+                                <MenuItem key={setting} onClick={() => handleMenuItemClick(setting)}>
                                     <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
                                 </MenuItem>
                             ))}

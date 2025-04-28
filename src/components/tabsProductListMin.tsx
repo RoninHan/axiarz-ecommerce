@@ -1,5 +1,3 @@
-
-
 import * as React from 'react';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -42,12 +40,17 @@ function a11yProps(index: number) {
 
 interface TabsProductListProps {
     title: string;
-    products: any[];
+    products: any;
     link: string
 }
 
 export default function TabsProductListMin(props: TabsProductListProps) {
     const [value, setValue] = React.useState(0);
+    const [tab1data, setTab1data] = React.useState<any[]>([]);
+    const [tab2data, setTab2data] = React.useState<any[]>([]);
+    const [tab3data, setTab3data] = React.useState<any[]>([]);
+    const [rows, setRows] = React.useState(1);
+    const imageRef = React.useRef<HTMLDivElement>(null);
 
     const handleMouseEnter = (event: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
@@ -59,6 +62,49 @@ export default function TabsProductListMin(props: TabsProductListProps) {
     const handleGoLink = () => {
         router.push(link);
     }
+
+    // 监听图片高度变化
+    React.useEffect(() => {
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const height = entry.contentRect.height;
+                // 假设每个产品卡片高度为 300px，计算可以显示的行数
+                const productHeight = 300;
+                const calculatedRows = Math.ceil(height / productHeight);
+                setRows(Math.max(1, calculatedRows));
+            }
+        });
+
+        if (imageRef.current) {
+            observer.observe(imageRef.current);
+        }
+
+        return () => {
+            if (imageRef.current) {
+                observer.unobserve(imageRef.current);
+            }
+        };
+    }, []);
+
+    // 根据行数动态计算每个 tab 的数据
+    React.useEffect(() => {
+        if (props.products.data && Array.isArray(props.products.data)) {
+            const productsPerRow = 4; // 每行显示的产品数量
+            const chunkSize = productsPerRow * rows;
+            
+            const tab1 = props.products.data.slice(0, chunkSize);
+            const tab2 = props.products.data.slice(chunkSize, chunkSize * 2);
+            const tab3 = props.products.data.slice(chunkSize * 2, chunkSize * 3);
+
+            setTab1data(tab1);
+            setTab2data(tab2);
+            setTab3data(tab3);
+        }
+    }, [props.products.data, rows]);
+
+    const homeImage = React.useMemo(() => {
+        return process.env.NEXT_PUBLIC_API_BASE_URL + props.products.image_url;
+    }, [props.products])
 
 
     return (
@@ -76,14 +122,14 @@ export default function TabsProductListMin(props: TabsProductListProps) {
 
                 </Box>
                 <div className='flex flex-row'>
-                    <div>
-                        <Image width={232} height={266} src={'https://www.waveshare.net/photo/column/Arduino-Nucleo/1.jpg'} alt={''}></Image>
+                    <div ref={imageRef}>
+                        <Image width={232} height={266} src={homeImage} alt={''}></Image>
                     </div>
                     <div className='flex-1'>
                         <CustomTabPanel value={value} index={0}>
                             <div className='w-full ml-[10px]'>
                                 <div className="flex gap-[10px] flex-wrap">
-                                    {products.map((product) => (
+                                    {tab1data.map((product: any) => (
                                         <Product {...product} key={product.id} />
                                     ))}
                                 </div>
@@ -92,7 +138,7 @@ export default function TabsProductListMin(props: TabsProductListProps) {
                         <CustomTabPanel value={value} index={1}>
                             <div className='w-full ml-[10px]'>
                                 <div className="flex gap-[10px] flex-wrap">
-                                    {products.map((product) => (
+                                    {tab2data.map((product: any) => (
                                         <Product {...product} key={product.id} />
                                     ))}
                                 </div>
@@ -101,7 +147,7 @@ export default function TabsProductListMin(props: TabsProductListProps) {
                         <CustomTabPanel value={value} index={2}>
                             <div className='w-full ml-[10px]'>
                                 <div className="flex gap-[10px] flex-wrap">
-                                    {products.map((product) => (
+                                    {tab3data.map((product: any) => (
                                         <Product {...product} key={product.id} />
                                     ))}
                                 </div>

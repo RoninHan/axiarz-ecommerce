@@ -5,12 +5,13 @@ import CardMedia from '@mui/material/CardMedia';
 import CardActionArea from '@mui/material/CardActionArea';
 import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 
 export interface ProductProps {
     name: string;
     price: number;
     context: string;
-    image: string;
+    image_url: string;
     id: string;
 }
 
@@ -20,13 +21,18 @@ export default function Product(props: ProductProps) {
     const handleGoDetails = () => {
         router.push(`/shopItem?id=` + props.id);
     }
+
+    const imageurl = useMemo(() => {
+        return process.env.NEXT_PUBLIC_API_BASE_URL + props.image_url;
+    }, [props.image_url])
+
     return (
         <Card sx={{ maxWidth: 365 }} className='w-[232px]' onClick={() => handleGoDetails()} >
             <CardActionArea className='p-[16px]'>
                 <CardMedia
                     component="img"
                     height="150"
-                    image={props.image}
+                    image={imageurl}
                     alt="green iguana"
                     className='w-[200px] h-[150px]'
                 />

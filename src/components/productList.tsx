@@ -1,4 +1,3 @@
-
 import { useRouter } from "next/navigation";
 import Product, { ProductProps } from "./product";
 
@@ -18,10 +17,10 @@ export default function ProductList(props: ProductListProps) {
         <div>
             <div className="h-[64px]">
                 <h2 className="float-left text-2xl text-gray-500  leading-[64px]"><a href="#" onClick={handleGoLink}>{title}</a></h2>
-                <a href="#" className="text-gray-500 text-base float-right h-[64px] leading-[64px]">更多 ></a>
+                <a href="#" className="text-gray-500 text-base float-right h-[64px] leading-[64px]" onClick={handleGoLink}>更多 &gt;</a>
             </div>
 
-            <div className="flex gap-[10px] flex-wrap justify-between">
+            <div className="flex gap-[10px] flex-wrap ">
                 {products.map((product) => (
                     <Product {...product} key={product.id} />
                 ))}

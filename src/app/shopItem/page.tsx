@@ -3,6 +3,7 @@ import Header from "@/components/header";
 import ImageZoom from "@/components/imageZoom";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import InputLabel from '@mui/material/InputLabel';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
@@ -17,7 +18,7 @@ import React from "react";
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
-import { get } from "@/utils/request";
+import { get, post } from "@/utils/request";
 
 
 interface TabPanelProps {
@@ -54,6 +55,7 @@ export default function ShopItem() {
     // 获取路由参数  http://stackoverflow.com/questions/12311，参数：12311
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
+    const router = useRouter();
 
     const [data, setData] = React.useState<any>({});
     const [age, setAge] = React.useState('');
@@ -72,6 +74,21 @@ export default function ShopItem() {
         console.log(res)
         res.image_url = process.env.NEXT_PUBLIC_API_BASE_URL + res.image_url
         setData(res)
+    }
+
+    const addCart = async () => {
+        // 检查是否登录
+        const token = localStorage.getItem('token');
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+
+        let res: any = await post(`/api/cart/create`, {
+            user_id: 1,
+            product_id: id,
+            quantity: 1
+        })
     }
 
 
@@ -102,7 +119,7 @@ export default function ShopItem() {
                         <div className="py-[20px] text-[#666] border-b-[1px] border-solid border-gray-300">
                             <div className="model flex items-center px-[10px] mt-[15px]">
                                 <div className="line-left w-[121px]">型号</div>
-                                <div className="line-right flex-1 ">{data.xh}</div>
+                                <div className="line-right flex-1 ">{data.type_name}</div>
                             </div>
                             <div className="sku flex items-center px-[10px] mt-[15px]">
                                 <div className="line-left w-[121px]">SKU</div>
@@ -110,7 +127,7 @@ export default function ShopItem() {
                             </div>
                             <div className="brand flex items-center px-[10px] mt-[15px]">
                                 <div className="line-left w-[121px]">品牌</div>
-                                <div className="line-right flex-1 ">{data.pp}</div>
+                                <div className="line-right flex-1 ">{data.brand}</div>
                             </div>
                         </div>
 
@@ -155,7 +172,13 @@ export default function ShopItem() {
                         </div>
 
                         <div className="flex items-center px-[10px] mt-[20px]">
-                            <Button variant="contained" className="px-10 py-3 bg-[#ff0036]">加入购物车</Button>
+                            <Button 
+                                variant="contained" 
+                                className="px-10 py-3 bg-[#ff0036]"
+                                onClick={addCart}
+                            >
+                                加入购物车
+                            </Button>
 
                             <div className="ml-[50px] text-[16px]">
                                 <IconButton aria-label="delete" className=" hover:text-red-500" size="small">
@@ -179,16 +202,16 @@ export default function ShopItem() {
                             </Tabs>
                         </Box>
                         <CustomTabPanel value={value} index={0}>
-                            {data.description}
+                            {data.product_details}
                         </CustomTabPanel>
                         <CustomTabPanel value={value} index={1}>
-                            Item Two
+                            {data.product_information}
                         </CustomTabPanel>
                         <CustomTabPanel value={value} index={2}>
-                            Item Three
+                            {data.configuration_list}
                         </CustomTabPanel>
                         <CustomTabPanel value={value} index={3}>
-                            Item Three2
+                           {data.wass}
                         </CustomTabPanel>
                     </Box>
                 </div>
