@@ -24,7 +24,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Products', path: '/products' },
-  { label: 'Pricing', path: '/pricing' },
   { label: 'Blog', path: '/blog' },
 ];
 

@@ -5,22 +5,59 @@ import { Box, Container, Paper, Typography, TextField, Button, Link, Alert } fro
 import { useRouter } from 'next/navigation';
 import Header from '@/components/header';
 import Footer from '@/components/Footer';
+import { post } from '@/utils/request';
+
+interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // 表单验证
+    if (!email || !password) {
+      setError('请填写邮箱和密码');
+      setLoading(false);
+      return;
+    }
+
+    // 邮箱格式验证
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('请输入有效的邮箱地址');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // TODO: 实现登录逻辑
-      console.log('登录信息:', { email, password });
+      const response = await post<LoginResponse>('/api/auth/login', {
+        email,
+        password
+      });
+
+      // 保存token
+      localStorage.setItem('token', response.token);
+      
       // 登录成功后跳转到首页
       router.push('/');
-    } catch (err) {
-      setError('登录失败，请检查邮箱和密码');
+    } catch (err: any) {
+      setError(err.response?.data?.message || '登录失败，请检查邮箱和密码');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,6 +104,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
               sx={{ 
                 mb: 2,
                 '& .MuiOutlinedInput-root': {
@@ -89,6 +127,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
               sx={{ 
                 mb: 3,
                 '& .MuiOutlinedInput-root': {
@@ -107,6 +146,7 @@ export default function LoginPage() {
               fullWidth
               variant="contained"
               type="submit"
+              disabled={loading}
               sx={{ 
                 mt: 2,
                 mb: 3,
@@ -121,7 +161,7 @@ export default function LoginPage() {
                 }
               }}
             >
-              登录
+              {loading ? '登录中...' : '登录'}
             </Button>
             <Box sx={{ textAlign: 'center' }}>
               <Link 
