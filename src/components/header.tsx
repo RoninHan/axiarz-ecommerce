@@ -13,9 +13,12 @@ import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 import SearchIcon from '@mui/icons-material/Search';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import InputBase from '@mui/material/InputBase';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUserStore } from '@/store/userStore';
+import Badge from '@mui/material/Badge';
 
 interface NavItem {
   label: string;
@@ -74,6 +77,8 @@ export default function Header() {
     const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const router = useRouter();
+    const { isLoggedIn, logout } = useUserStore();
+    const [cartCount, setCartCount] = useState(0);
 
     const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorElNav(event.currentTarget);
@@ -92,7 +97,7 @@ export default function Header() {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
+        logout();
         router.push('/login');
         handleCloseUserMenu();
     };
@@ -219,34 +224,69 @@ export default function Header() {
                             onKeyDown={handleSearch}
                         />
                     </Search>
-                    <Box sx={{ flexGrow: 0 }}>
-                        <Tooltip title="Open settings">
-                            <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-                            </IconButton>
-                        </Tooltip>
-                        <Menu
-                            sx={{ mt: '45px' }}
-                            id="menu-appbar"
-                            anchorEl={anchorElUser}
-                            anchorOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
+                    <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <IconButton 
+                            onClick={() => router.push('/cart')}
+                            sx={{ 
+                                color: '#fff',
+                                '&:hover': {
+                                    color: '#ff9400'
+                                }
                             }}
-                            keepMounted
-                            transformOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
-                            }}
-                            open={Boolean(anchorElUser)}
-                            onClose={handleCloseUserMenu}
                         >
-                            {settings.map((setting) => (
-                                <MenuItem key={setting} onClick={() => handleMenuItemClick(setting)}>
-                                    <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
-                                </MenuItem>
-                            ))}
-                        </Menu>
+                            <Badge badgeContent={cartCount} color="error">
+                                <ShoppingCartIcon />
+                            </Badge>
+                        </IconButton>
+                        {isLoggedIn ? (
+                            <>
+                                <Tooltip title="Open settings">
+                                    <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                                        <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Menu
+                                    sx={{ mt: '45px' }}
+                                    id="menu-appbar"
+                                    anchorEl={anchorElUser}
+                                    anchorOrigin={{
+                                        vertical: 'top',
+                                        horizontal: 'right',
+                                    }}
+                                    keepMounted
+                                    transformOrigin={{
+                                        vertical: 'top',
+                                        horizontal: 'right',
+                                    }}
+                                    open={Boolean(anchorElUser)}
+                                    onClose={handleCloseUserMenu}
+                                >
+                                    {settings.map((setting) => (
+                                        <MenuItem key={setting} onClick={() => handleMenuItemClick(setting)}>
+                                            <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
+                                        </MenuItem>
+                                    ))}
+                                </Menu>
+                            </>
+                        ) : (
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <Button
+                                    variant="outlined"
+                                    color="inherit"
+                                    onClick={() => router.push('/login')}
+                                    sx={{ color: '#fff', borderColor: '#fff' }}
+                                >
+                                    登录
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    onClick={() => router.push('/register')}
+                                    sx={{ bgcolor: '#fa9619', '&:hover': { bgcolor: '#e68600' } }}
+                                >
+                                    注册
+                                </Button>
+                            </Box>
+                        )}
                     </Box>
                 </Toolbar>
             </Container>

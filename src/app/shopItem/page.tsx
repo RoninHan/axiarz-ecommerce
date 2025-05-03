@@ -19,6 +19,12 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import { get, post } from "@/utils/request";
+import { useUserStore } from "@/store/userStore";
+import { Snackbar, Alert, Typography } from '@mui/material';
+import RemoveIcon from '@mui/icons-material/Remove';
+import AddIcon from '@mui/icons-material/Add';
+
+
 
 
 interface TabPanelProps {
@@ -58,15 +64,29 @@ export default function ShopItem() {
     const router = useRouter();
 
     const [data, setData] = React.useState<any>({});
-    const [age, setAge] = React.useState('');
-
-    const handleChange = (event: SelectChangeEvent) => {
-        setAge(event.target.value);
-    };
+    const [openSnackbar, setOpenSnackbar] = React.useState(false);
+    const [quantity, setQuantity] = React.useState(1);
     const [value, setValue] = React.useState(0);
+
+    const handleQuantityChange = (type: 'add' | 'minus') => {
+        if (type === 'add') {
+            setQuantity(prev => prev + 1);
+        } else {
+            if (quantity > 1) {
+                setQuantity(prev => prev - 1);
+            }
+        }
+    };
 
     const handleChange2 = (event: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
+    };
+
+    const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setOpenSnackbar(false);
     };
 
     const getItem = async () => {
@@ -78,19 +98,23 @@ export default function ShopItem() {
 
     const addCart = async () => {
         // 检查是否登录
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('axiarz-token');
         if (!token) {
             router.push('/login');
             return;
         }
 
-        let res: any = await post(`/api/cart/create`, {
-            user_id: 1,
-            product_id: id,
-            quantity: 1
-        })
+        try {
+            let res: any = await post(`/api/cart/create`, {
+                user_id: useUserStore.getState().user?.id,
+                product_id: Number(id),
+                quantity: quantity
+            });
+            setOpenSnackbar(true);
+        } catch (error) {
+            console.error('加入购物车失败:', error);
+        }
     }
-
 
     useEffect(() => {
         console.log('id: ' + id)
@@ -131,62 +155,77 @@ export default function ShopItem() {
                             </div>
                         </div>
 
-                        <div className="invoicing-type flex items-center px-[10px] mt-[20px] text-[#666]">
-                            <div className="line-left w-[121px]">开票类型</div>
-                            <div className="line-right flex-1">
-                                <FormControl sx={{ m: 1, minWidth: 120 }}>
-                                    <InputLabel id="demo-simple-select-helper-label" size="small">开票类型</InputLabel>
-                                    <Select
-                                        labelId="demo-simple-select-helper-label"
-                                        id="demo-simple-select-helper"
-                                        value={age}
-                                        label="Age"
-                                        onChange={handleChange}
-                                        size="small"
-                                    >
-                                        <MenuItem value="">
-                                            <em>None</em>
-                                        </MenuItem>
-                                        <MenuItem value={10}>Ten</MenuItem>
-                                        <MenuItem value={20}>Twenty</MenuItem>
-                                        <MenuItem value={30}>Thirty</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </div>
-                        </div>
                         <div className="num flex items-center px-[10px] mt-[20px] text-[#666]">
                             <div className="line-left w-[121px]">数量</div>
-                            <div className="line-right flex-1">
-                                <TextField
-                                    id="standard-number"
-                                    label="Number"
-                                    type="number"
-                                    variant="standard"
-                                    slotProps={{
-                                        inputLabel: {
-                                            shrink: true,
-                                        },
-                                    }}
-                                />
+                            <div className="line-right flex-1 flex items-center">
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center',
+                                    border: '1px solid #ddd',
+                                    borderRadius: 1,
+                                    width: 'fit-content'
+                                }}>
+                                    <IconButton 
+                                        onClick={() => handleQuantityChange('minus')}
+                                        disabled={quantity <= 1}
+                                        sx={{ 
+                                            color: quantity <= 1 ? '#ccc' : '#666',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(0, 0, 0, 0.04)'
+                                            }
+                                        }}
+                                    >
+                                        <RemoveIcon />
+                                    </IconButton>
+                                    <Typography 
+                                        sx={{ 
+                                            px: 2, 
+                                            minWidth: '40px', 
+                                            textAlign: 'center',
+                                            borderLeft: '1px solid #ddd',
+                                            borderRight: '1px solid #ddd'
+                                        }}
+                                    >
+                                        {quantity}
+                                    </Typography>
+                                    <IconButton 
+                                        onClick={() => handleQuantityChange('add')}
+                                        sx={{ 
+                                            color: '#666',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(0, 0, 0, 0.04)'
+                                            }
+                                        }}
+                                    >
+                                        <AddIcon />
+                                    </IconButton>
+                                </Box>
                             </div>
                         </div>
 
                         <div className="flex items-center px-[10px] mt-[20px]">
                             <Button 
                                 variant="contained" 
-                                className="px-10 py-3 bg-[#ff0036]"
+                                className="px-10 py-3"
                                 onClick={addCart}
+                                sx={{ 
+                                    bgcolor: '#ff9400',
+                                    '&:hover': {
+                                        bgcolor: '#e68600'
+                                    }
+                                }}
                             >
                                 加入购物车
                             </Button>
 
+                            {/* 暂时隐藏收藏按钮，后续使用
                             <div className="ml-[50px] text-[16px]">
                                 <IconButton aria-label="delete" className=" hover:text-red-500" size="small">
                                     <FavoriteIcon />
                                     收藏商品
                                 </IconButton>
-
                             </div>
+                            */}
                         </div>
                     </div>
                 </div>
@@ -202,20 +241,34 @@ export default function ShopItem() {
                             </Tabs>
                         </Box>
                         <CustomTabPanel value={value} index={0}>
-                            {data.product_details}
+                            <div dangerouslySetInnerHTML={{ __html: data.product_details }} />
                         </CustomTabPanel>
                         <CustomTabPanel value={value} index={1}>
-                            {data.product_information}
+                            <div dangerouslySetInnerHTML={{ __html: data.product_information }} />
                         </CustomTabPanel>
                         <CustomTabPanel value={value} index={2}>
-                            {data.configuration_list}
+                            <div dangerouslySetInnerHTML={{ __html: data.configuration_list }} />
                         </CustomTabPanel>
                         <CustomTabPanel value={value} index={3}>
-                           {data.wass}
+                            <div dangerouslySetInnerHTML={{ __html: data.wass }} />
                         </CustomTabPanel>
                     </Box>
                 </div>
             </main>
+            <Snackbar 
+                open={openSnackbar} 
+                autoHideDuration={3000} 
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert 
+                    onClose={handleCloseSnackbar} 
+                    severity="success" 
+                    sx={{ width: '100%' }}
+                >
+                    商品已成功加入购物车！
+                </Alert>
+            </Snackbar>
         </div>
     )
 }

@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/header';
 import Footer from '@/components/Footer';
 import { post } from '@/utils/request';
+import { useUserStore } from '@/store/userStore';
+
 
 interface LoginResponse {
   token: string;
@@ -22,6 +24,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { setToken, setUser } = useUserStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,13 +47,13 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await post<LoginResponse>('/api/auth/login', {
+      const response:any = await post('/api/login', {
         email,
         password
       });
-
-      // 保存token
-      localStorage.setItem('token', response.token);
+      console.log(response);  
+      setToken(response.token);
+      setUser({id: response.id, name: response.username});
       
       // 登录成功后跳转到首页
       router.push('/');

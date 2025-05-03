@@ -1,138 +1,206 @@
 'use client'
 import Header from "@/components/header";
+import Footer from "@/components/Footer";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { get, post } from "@/utils/request";
+import { useUserStore } from "@/store/userStore";
+import { useCartStore } from '@/store/cartStore';
+import { Box, Button, Checkbox, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
+import Image from "next/image";
 
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Checkbox from '@mui/material/Checkbox';
-import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
-import ClearIcon from '@mui/icons-material/Clear';
-import React from "react";
-import { Button, Divider, FormControlLabel, ListItemAvatar } from "@mui/material";
-import { useRouter } from 'next/navigation';
-
-export default function Cart() {
+export default function CartPage() {
     const router = useRouter();
-    const [checked, setChecked] = React.useState([0]);
+    const { isLoggedIn } = useUserStore();
+    const [cartItems, setCartItems] = useState<any[]>([]);
+    const { selectedItems, toggleSelectedItem, setSelectedItems, setCheckoutData } = useCartStore();
+    const [totalPrice, setTotalPrice] = useState(0);
 
-    const handleToggle = (value: number) => () => {
-        const currentIndex = checked.indexOf(value);
-        const newChecked = [...checked];
-
-        if (currentIndex === -1) {
-            newChecked.push(value);
-        } else {
-            newChecked.splice(currentIndex, 1);
+    useEffect(() => {
+        if (!isLoggedIn) {
+            router.push('/login');
+            return;
         }
+        fetchCartItems();
+    }, [isLoggedIn]);
 
-        setChecked(newChecked);
+    const fetchCartItems = async () => {
+        try {
+            const response: any = await get('/api/cart/get');
+            setCartItems(response.cart_items);
+        } catch (error) {
+            console.error('获取购物车失败:', error);
+        }
     };
+
+    const handleDelete = async (id: number) => {
+        try {
+            await post('/api/cart/delete/' + id);
+            fetchCartItems();
+        } catch (error) {
+            console.error('删除失败:', error);
+        }
+    };
+
+    const handleBatchDelete = async () => {
+        if (selectedItems.length === 0) return;
+        
+        try {
+            for (const id of selectedItems) {
+                await post('/api/cart/delete/' + id);
+            }
+            setSelectedItems([]);
+            fetchCartItems();
+        } catch (error) {
+            console.error('批量删除失败:', error);
+        }
+    };
+
+    const handleCheckboxChange = (id: number) => {
+        toggleSelectedItem(id);
+    };
+
+    const calculateTotal = () => {
+        const selected = cartItems.filter(item => selectedItems.includes(item.id));
+        const total = selected.reduce((sum, item) => sum + (Number(item.product.price) * item.quantity), 0);
+        setTotalPrice(total);
+    };
+
+    useEffect(() => {
+        calculateTotal();
+    }, [selectedItems, cartItems]);
+
+    const handleCheckout = () => {
+        const selectedCartItems = cartItems.filter(item => selectedItems.includes(item.id));
+        setCheckoutData(selectedCartItems, totalPrice);
+        router.push('/placeOrder');
+    };
+
     return (
-        <div>
-            <Header></Header>
-
-            <main className="w-[1200px] mx-auto p-[20px] bg-white mt-[20px]">
-                <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-                    {[0, 1, 2, 3].map((value) => {
-                        const labelId = `checkbox-list-label-${value}`;
-
-                        return (
-                            <ListItem
-                                key={value}
-                                secondaryAction={
-                                    <IconButton edge="end" aria-label="clear">
-                                        <ClearIcon />
-                                    </IconButton>
-                                }
-                                disablePadding
-                            >
-                                <ListItemButton role={undefined} onClick={handleToggle(value)} dense>
-                                    <ListItemIcon>
+        <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1 container mx-auto px-4 py-8">
+                <Typography variant="h4" gutterBottom>
+                    购物车
+                </Typography>
+                <TableContainer component={Paper}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell padding="checkbox">
+                                    <Checkbox
+                                        checked={selectedItems.length === cartItems.length}
+                                        onChange={() => {
+                                            if (selectedItems.length === cartItems.length) {
+                                                setSelectedItems([]);
+                                            } else {
+                                                setSelectedItems(cartItems.map(item => item.id));
+                                            }
+                                        }}
+                                    />
+                                </TableCell>
+                                <TableCell>商品</TableCell>
+                                <TableCell align="right">单价</TableCell>
+                                <TableCell align="right">数量</TableCell>
+                                <TableCell align="right">小计</TableCell>
+                                <TableCell align="right">操作</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {cartItems.map((item) => (
+                                <TableRow key={item.id}>
+                                    <TableCell padding="checkbox">
                                         <Checkbox
-                                            edge="start"
-                                            checked={checked.includes(value)}
-                                            tabIndex={-1}
-                                            disableRipple
-                                            inputProps={{ 'aria-labelledby': labelId }}
+                                            checked={selectedItems.includes(item.id)}
+                                            onChange={() => handleCheckboxChange(item.id)}
                                         />
-                                    </ListItemIcon>
-                                    <ListItemAvatar>
-                                        <img className="w-[100px] h-[75px]" src="https://www.waveshare.net/photo/LCD-OLED/7inch-DSI-LCD-C/7inch-DSI-LCD-C-1.jpg?v=210730" />
-                                    </ListItemAvatar>
-                                    <ListItemText id={labelId} primary={
-                                        <div className="w-[460px]">
-                                            <a href="" className="text-[#666]">
-                                                7寸电容触摸屏触控屏带外壳 500万像素前置摄像头 800×480像素
-                                            </a>
-                                            <div>
-                                                <em className="text-[#999]">型号：7inch DSI LCD (with cam and case)</em>
-                                            </div>
-                                        </div>
-                                    } />
-
-                                    <ListItemText id={labelId} primary={
-                                        <div className="text-[#666] w-[80px]">
-                                            ¥ 307.00
-                                        </div>
-                                    } />
-                                    <ListItemText className="" id={labelId} primary={
-                                        <div className="w-[80px]">
-                                            <TextField
-                                                id="standard-number"
-                                                type="number"
-                                                variant="standard"
-                                                onClick={(e) => e.stopPropagation()}
-                                                slotProps={{
-                                                    inputLabel: {
-                                                        shrink: true,
-                                                    },
-                                                }}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <Image
+                                                src={process.env.NEXT_PUBLIC_API_BASE_URL + item.product.image_url}
+                                                alt={item.product.name}
+                                                width={80}
+                                                height={80}
+                                                style={{ objectFit: 'cover' }}
                                             />
-                                        </div>
-
-                                    } />
-                                    <ListItemText className="w-[80px]" id={labelId} primary={
-                                        <div className="text-[#666]">
-                                            <span className="text-[#B0B0B0]">小记</span> ¥ 307.00
-                                        </div>
-                                    } />
-                                </ListItemButton>
-                            </ListItem>
-                        );
-                    })}
-                    <Divider />
-                    <ListItem
-                        secondaryAction={
-                            <IconButton edge="end" aria-label="clear">
-                                <Button variant="contained" className="px-10 py-1.5 bg-[#ff0036]" onClick={() => {
-                                    router.push("/placeOrder")
-                                }}>去结账</Button>
-                            </IconButton>
-                        }
-                    >
-                        <ListItemIcon>
-                            <FormControlLabel control={<Checkbox edge="start" defaultChecked />} label="全选" />
-                        </ListItemIcon>
-                        <ListItemText primary={
-                            <Button>
-                                删除
-                            </Button>
-                        } />
-                        <ListItemText />
-                        <ListItemText primary={
-                            <div>
-                                <span className="text-[#666]">已选择 <span className="text-[#ff0036]">2</span> 款商品， 共计 <span className="text-[#ff0036]">2</span> 件， 合计(不含运费)： </span>
-                                <span className="text-[28px] text-[#ff0036]">¥ 307.00</span>
-                            </div>
-                        } />
-                        <ListItemText primary="" />
-                    </ListItem>
-                </List>
-
+                                            <Box sx={{ ml: 2 }}>
+                                                <Typography>{item.product.name}</Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    型号：{item.product.type_name}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right">¥{item.product.price}</TableCell>
+                                    <TableCell align="right">{item.quantity}</TableCell>
+                                    <TableCell align="right">¥{(Number(item.product.price) * item.quantity).toFixed(2)}</TableCell>
+                                    <TableCell align="right">
+                                        <IconButton 
+                                            onClick={() => handleDelete(item.id)}
+                                            sx={{ 
+                                                color: '#ff0036',
+                                                '&:hover': {
+                                                    color: '#cc002b',
+                                                    bgcolor: 'rgba(255, 0, 54, 0.04)'
+                                                }
+                                            }}
+                                        >
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<DeleteIcon />}
+                            onClick={handleBatchDelete}
+                            disabled={selectedItems.length === 0}
+                            sx={{ 
+                                borderColor: '#ff0036',
+                                color: '#ff0036',
+                                '&:hover': {
+                                    borderColor: '#cc002b',
+                                    bgcolor: 'rgba(255, 0, 54, 0.04)'
+                                }
+                            }}
+                        >
+                            批量删除
+                        </Button>
+                        <Typography variant="body2" color="text.secondary">
+                            已选择 {selectedItems.length} 件商品
+                        </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Typography variant="h6">
+                            总计: ¥{totalPrice.toFixed(2)}
+                        </Typography>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            onClick={handleCheckout}
+                            disabled={selectedItems.length === 0}
+                            sx={{ 
+                                mt: 3,
+                                bgcolor: '#ff9400',
+                                '&:hover': {
+                                    bgcolor: '#e68600'
+                                }
+                            }}
+                        >
+                            结算
+                        </Button>
+                    </Box>
+                </Box>
             </main>
+            <Footer />
         </div>
-    )
+    );
 }

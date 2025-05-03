@@ -14,7 +14,7 @@ const service: AxiosInstance = axios.create({
 service.interceptors.request.use(
   (config) => {
     // 在发送请求之前做些什么
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('axiarz-token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -41,7 +41,7 @@ service.interceptors.response.use(
       switch (error.response.status) {
         case 401:
           // 未授权，清除 token 并跳转到登录页面
-          localStorage.removeItem('token');
+          localStorage.removeItem('axiarz-token');
           window.location.href = '/login';
           break;
         case 403:
