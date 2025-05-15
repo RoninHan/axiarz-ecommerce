@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { get, post } from "@/utils/request";
 import { useUserStore } from "@/store/userStore";
-import { Box, Button, Checkbox, FormControl, FormControlLabel, FormGroup, FormLabel, Grid, IconButton, Paper, Radio, RadioGroup, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import { Box, Button, Checkbox, FormControl, FormControlLabel, FormGroup, FormLabel, Grid, IconButton, Paper, Radio, RadioGroup, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Chip } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import Image from "next/image";
@@ -30,25 +30,33 @@ export default function PlaceOrder() {
 
     // 表单数据
     const [formData, setFormData] = useState({
-        name: user?.name || '',
+        name: '',
         phone: '',
         address: '',
         invoice: false,
-        invoiceType: 'personal',
+        invoiceType: 1,
         invoiceTitle: '',
         invoiceTaxNumber: '',
         remark: ''
     });
 
     const [newAddress, setNewAddress] = useState({
-        name: '',
+        receiver: '',
         phone: '',
-        address: ''
+        province: '',
+        city: '',
+        district: '',
+        detail: '',
+        postal_code: ''
     });
     const [newInvoice, setNewInvoice] = useState({
-        type: 'personal',
+        type: 1, // 1: 个人, 2: 公司
         title: '',
-        tax_number: ''
+        tax_number: '',
+        content: '',
+        email: '',
+        phone: '',
+        is_default: false
     });
 
     useEffect(() => {
@@ -73,8 +81,8 @@ export default function PlaceOrder() {
 
     const fetchAddresses = async () => {
         try {
-            const response: any = await get('/api/address/list');
-            setAddresses(response.addresses);
+            const response: any = await get('/api/address/get');
+            setAddresses(response.rows);
         } catch (error) {
             console.error('获取地址列表失败:', error);
         }
@@ -135,15 +143,23 @@ export default function PlaceOrder() {
 
     const handleSaveAddress = async () => {
         try {
-            const response: any = await post('/api/address/add', newAddress);
+            const response: any = await post('/api/address/create', newAddress);
             setAddresses(prev => [...prev, response.address]);
             setFormData(prev => ({
                 ...prev,
-                name: newAddress.name,
+                name: newAddress.receiver,
                 phone: newAddress.phone,
-                address: newAddress.address
+                address: `${newAddress.province}${newAddress.city}${newAddress.district}${newAddress.detail}`
             }));
-            setNewAddress({ name: '', phone: '', address: '' });
+            setNewAddress({ 
+                receiver: '', 
+                phone: '', 
+                province: '', 
+                city: '', 
+                district: '', 
+                detail: '', 
+                postal_code: '' 
+            });
             setOpenAddAddressDialog(false);
             setSnackbarMessage('地址添加成功');
             setSnackbarSeverity('success');
@@ -158,7 +174,7 @@ export default function PlaceOrder() {
 
     const handleSaveInvoice = async () => {
         try {
-            const response: any = await post('/api/invoice/add', newInvoice);
+            const response: any = await post('/api/invoice/create', newInvoice);
             setInvoices(prev => [...prev, response.invoice]);
             setFormData(prev => ({
                 ...prev,
@@ -166,7 +182,15 @@ export default function PlaceOrder() {
                 invoiceTitle: newInvoice.title,
                 invoiceTaxNumber: newInvoice.tax_number
             }));
-            setNewInvoice({ type: 'personal', title: '', tax_number: '' });
+            setNewInvoice({ 
+                type: 1, 
+                title: '', 
+                tax_number: '', 
+                content: '', 
+                email: '', 
+                phone: '', 
+                is_default: false 
+            });
             setOpenAddInvoiceDialog(false);
             setSnackbarMessage('发票信息添加成功');
             setSnackbarSeverity('success');
@@ -255,13 +279,22 @@ export default function PlaceOrder() {
                                 <Typography variant="h6">
                                     收货信息
                                 </Typography>
-                                <Button
-                                    startIcon={<AddIcon />}
-                                    onClick={() => setOpenAddAddressDialog(true)}
-                                    sx={{ color: '#ff9400' }}
-                                >
-                                    添加地址
-                                </Button>
+                                <Box>
+                                    <Button
+                                        startIcon={<AddIcon />}
+                                        onClick={() => setOpenAddAddressDialog(true)}
+                                        sx={{ color: '#ff9400', mr: 2 }}
+                                    >
+                                        添加地址
+                                    </Button>
+                                    <Button
+                                        startIcon={<AddIcon />}
+                                        onClick={() => setOpenAddressDialog(true)}
+                                        sx={{ color: '#ff9400' }}
+                                    >
+                                        选择地址
+                                    </Button>
+                                </Box>
                             </Box>
                             <Grid container spacing={2}>
                                 <Grid item xs={12} sm={6}>
@@ -335,15 +368,22 @@ export default function PlaceOrder() {
                                 <Typography variant="h6">
                                     发票信息
                                 </Typography>
-                                {formData.invoice && (
+                                <Box>
                                     <Button
                                         startIcon={<AddIcon />}
                                         onClick={() => setOpenAddInvoiceDialog(true)}
-                                        sx={{ color: '#ff9400' }}
+                                        sx={{ color: '#ff9400', mr: 2 }}
                                     >
                                         添加发票
                                     </Button>
-                                )}
+                                    <Button
+                                        startIcon={<AddIcon />}
+                                        onClick={() => setOpenInvoiceDialog(true)}
+                                        sx={{ color: '#ff9400' }}
+                                    >
+                                        选择发票
+                                    </Button>
+                                </Box>
                             </Box>
                             <FormGroup>
                                 <FormControlLabel
@@ -368,12 +408,12 @@ export default function PlaceOrder() {
                                             onChange={handleInputChange}
                                         >
                                             <FormControlLabel
-                                                value="personal"
+                                                value={1}
                                                 control={<Radio />}
                                                 label="个人"
                                             />
                                             <FormControlLabel
-                                                value="company"
+                                                value={2}
                                                 control={<Radio />}
                                                 label="公司"
                                             />
@@ -398,7 +438,7 @@ export default function PlaceOrder() {
                                         }}
                                         required
                                     />
-                                    {formData.invoiceType === 'company' && (
+                                    {formData.invoiceType === 2 && (
                                         <TextField
                                             fullWidth
                                             label="纳税人识别号"
@@ -529,28 +569,45 @@ export default function PlaceOrder() {
                                         bgcolor: 'rgba(255, 148, 0, 0.04)'
                                     }
                                 }}
-                                onClick={() => handleAddressSelect(address)}
+                                onClick={() => {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        name: address.name,
+                                        phone: address.phone,
+                                        address: `${address.province}${address.city}${address.district}${address.detail}`
+                                    }));
+                                    setOpenAddressDialog(false);
+                                }}
                             >
-                                <Typography variant="subtitle1">{address.name}</Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="subtitle1">{address.name}</Typography>
+                                    {address.is_default && (
+                                        <Chip 
+                                            label="默认" 
+                                            size="small" 
+                                            sx={{ 
+                                                bgcolor: '#ff9400', 
+                                                color: 'white',
+                                                '& .MuiChip-label': {
+                                                    px: 1
+                                                }
+                                            }} 
+                                        />
+                                    )}
+                                </Box>
                                 <Typography variant="body2" color="text.secondary">
                                     {address.phone}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    {address.address}
+                                    {address.province}{address.city}{address.district}{address.detail}
                                 </Typography>
+                                {address.postal_code && (
+                                    <Typography variant="body2" color="text.secondary">
+                                        邮编：{address.postal_code}
+                                    </Typography>
+                                )}
                             </Paper>
                         ))}
-                        <Button
-                            fullWidth
-                            startIcon={<AddIcon />}
-                            onClick={() => {
-                                setOpenAddressDialog(false);
-                                router.push('/address/add');
-                            }}
-                            sx={{ mt: 2 }}
-                        >
-                            添加新地址
-                        </Button>
                     </Box>
                 </DialogContent>
                 <DialogActions>
@@ -574,30 +631,55 @@ export default function PlaceOrder() {
                                         bgcolor: 'rgba(255, 148, 0, 0.04)'
                                     }
                                 }}
-                                onClick={() => handleInvoiceSelect(invoice)}
+                                onClick={() => {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        invoiceType: invoice.type,
+                                        invoiceTitle: invoice.title,
+                                        invoiceTaxNumber: invoice.tax_number || ''
+                                    }));
+                                    setOpenInvoiceDialog(false);
+                                }}
                             >
-                                <Typography variant="subtitle1">{invoice.title}</Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="subtitle1">{invoice.title}</Typography>
+                                    {invoice.is_default && (
+                                        <Chip 
+                                            label="默认" 
+                                            size="small" 
+                                            sx={{ 
+                                                bgcolor: '#ff9400', 
+                                                color: 'white',
+                                                '& .MuiChip-label': {
+                                                    px: 1
+                                                }
+                                            }} 
+                                        />
+                                    )}
+                                </Box>
                                 <Typography variant="body2" color="text.secondary">
-                                    {invoice.type === 'personal' ? '个人' : '公司'}
+                                    {invoice.type === 1 ? '个人' : '公司'}
                                 </Typography>
-                                {invoice.type === 'company' && (
+                                {invoice.type === 2 && (
                                     <Typography variant="body2" color="text.secondary">
                                         税号：{invoice.tax_number}
                                     </Typography>
                                 )}
+                                <Typography variant="body2" color="text.secondary">
+                                    内容：{invoice.content}
+                                </Typography>
+                                {invoice.email && (
+                                    <Typography variant="body2" color="text.secondary">
+                                        邮箱：{invoice.email}
+                                    </Typography>
+                                )}
+                                {invoice.phone && (
+                                    <Typography variant="body2" color="text.secondary">
+                                        电话：{invoice.phone}
+                                    </Typography>
+                                )}
                             </Paper>
                         ))}
-                        <Button
-                            fullWidth
-                            startIcon={<AddIcon />}
-                            onClick={() => {
-                                setOpenInvoiceDialog(false);
-                                router.push('/invoice/add');
-                            }}
-                            sx={{ mt: 2 }}
-                        >
-                            添加新发票
-                        </Button>
                     </Box>
                 </DialogContent>
                 <DialogActions>
@@ -618,8 +700,8 @@ export default function PlaceOrder() {
                         <TextField
                             fullWidth
                             label="收货人姓名"
-                            name="name"
-                            value={newAddress.name}
+                            name="receiver"
+                            value={newAddress.receiver}
                             onChange={handleNewAddressChange}
                             sx={{ mb: 2 }}
                         />
@@ -631,14 +713,51 @@ export default function PlaceOrder() {
                             onChange={handleNewAddressChange}
                             sx={{ mb: 2 }}
                         />
+                        <Grid container spacing={2}>
+                            <Grid item xs={4}>
+                                <TextField
+                                    fullWidth
+                                    label="省份"
+                                    name="province"
+                                    value={newAddress.province}
+                                    onChange={handleNewAddressChange}
+                                />
+                            </Grid>
+                            <Grid item xs={4}>
+                                <TextField
+                                    fullWidth
+                                    label="城市"
+                                    name="city"
+                                    value={newAddress.city}
+                                    onChange={handleNewAddressChange}
+                                />
+                            </Grid>
+                            <Grid item xs={4}>
+                                <TextField
+                                    fullWidth
+                                    label="区/县"
+                                    name="district"
+                                    value={newAddress.district}
+                                    onChange={handleNewAddressChange}
+                                />
+                            </Grid>
+                        </Grid>
                         <TextField
                             fullWidth
-                            label="收货地址"
-                            name="address"
-                            value={newAddress.address}
+                            label="详细地址"
+                            name="detail"
+                            value={newAddress.detail}
                             onChange={handleNewAddressChange}
                             multiline
                             rows={2}
+                            sx={{ mt: 2, mb: 2 }}
+                        />
+                        <TextField
+                            fullWidth
+                            label="邮政编码"
+                            name="postal_code"
+                            value={newAddress.postal_code}
+                            onChange={handleNewAddressChange}
                         />
                     </Box>
                 </DialogContent>
@@ -670,15 +789,18 @@ export default function PlaceOrder() {
                                 row
                                 name="type"
                                 value={newInvoice.type}
-                                onChange={handleNewInvoiceChange}
+                                onChange={(e) => setNewInvoice(prev => ({
+                                    ...prev,
+                                    type: parseInt(e.target.value)
+                                }))}
                             >
                                 <FormControlLabel
-                                    value="personal"
+                                    value={1}
                                     control={<Radio />}
                                     label="个人"
                                 />
                                 <FormControlLabel
-                                    value="company"
+                                    value={2}
                                     control={<Radio />}
                                     label="公司"
                                 />
@@ -692,12 +814,52 @@ export default function PlaceOrder() {
                             onChange={handleNewInvoiceChange}
                             sx={{ mb: 2 }}
                         />
+                        {newInvoice.type === 2 && (
+                            <TextField
+                                fullWidth
+                                label="纳税人识别号"
+                                name="tax_number"
+                                value={newInvoice.tax_number}
+                                onChange={handleNewInvoiceChange}
+                                sx={{ mb: 2 }}
+                            />
+                        )}
                         <TextField
                             fullWidth
-                            label="纳税人识别号"
-                            name="tax_number"
-                            value={newInvoice.tax_number}
+                            label="发票内容"
+                            name="content"
+                            value={newInvoice.content}
                             onChange={handleNewInvoiceChange}
+                            sx={{ mb: 2 }}
+                        />
+                        <TextField
+                            fullWidth
+                            label="电子邮箱"
+                            name="email"
+                            value={newInvoice.email}
+                            onChange={handleNewInvoiceChange}
+                            sx={{ mb: 2 }}
+                        />
+                        <TextField
+                            fullWidth
+                            label="联系电话"
+                            name="phone"
+                            value={newInvoice.phone}
+                            onChange={handleNewInvoiceChange}
+                            sx={{ mb: 2 }}
+                        />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    name="is_default"
+                                    checked={newInvoice.is_default}
+                                    onChange={(e) => setNewInvoice(prev => ({
+                                        ...prev,
+                                        is_default: e.target.checked
+                                    }))}
+                                />
+                            }
+                            label="设为默认发票"
                         />
                     </Box>
                 </DialogContent>
